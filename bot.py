@@ -1,3 +1,15 @@
+import time, threading, json, os, urllib.request, random
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler
+
+BOT_TOKEN = "8921104068:AAGEV1oPzJqViDGbofYQub4f-3sca92nMEw"
+STEAM_LOGIN = "mikimayc39"
+STEAM_PASS = "keklolorbidol12#"
+GAMES = [570, 730, 440]
+stats = {"hours": 0}
+session_cookies = ""
+running = False
+
 def http_post(url, data):
     d = urllib.parse.urlencode(data).encode()
     headers = {
@@ -38,3 +50,48 @@ def steam_login():
     except Exception as e:
         print(f"Login error: {e}")
         return False
+
+def idle_game(appid, minutes=60):
+    try:
+        http_post("https://api.steampowered.com/ISteamApps/UpToDateCheck/v1/", {"appid": appid, "version": 0})
+        for _ in range(minutes):
+            if not running: break
+            time.sleep(60)
+        stats["hours"] += 1
+    except: pass
+
+def farm_loop():
+    global running
+    while running:
+        for appid in GAMES:
+            if not running: break
+            idle_game(appid, 60)
+
+async def start(update, context):
+    kb = [[InlineKeyboardButton("🚀 ЗАПУСТИТЬ", callback_data='on')], [InlineKeyboardButton("⏹ СТОП", callback_data='off')], [InlineKeyboardButton("📊 СТАТС", callback_data='st')]]
+    await update.message.reply_text(f"🎮 STEAM FARMER\nСтатус: {'🟢' if running else '🔴'}\nЧасов: {stats['hours']}\nИгр: {len(GAMES)}", reply_markup=InlineKeyboardMarkup(kb))
+
+async def btn(update, context):
+    global running
+    q = update.callback_query; await q.answer(); d = q.data
+    if d == 'on':
+        if not steam_login():
+            await q.edit_message_text("❌ Не удалось зайти в Steam.")
+            return
+        running = True
+        threading.Thread(target=farm_loop, daemon=True).start()
+        await q.edit_message_text("🚀 Фарм запущен! Dota 2 + CS2 + TF2.")
+    elif d == 'off':
+        running = False
+        await q.edit_message_text(f"⏹ Стоп. Часов: {stats['hours']}")
+    elif d == 'st':
+        await q.edit_message_text(f"📊 Статус: {'🟢' if running else '🔴'}\nЧасов: {stats['hours']}")
+
+def main():
+    app = Application.builder().token(BOT_TOKEN).build()
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CallbackQueryHandler(btn))
+    app.run_polling()
+
+if __name__ == "__main__":
+    main()
