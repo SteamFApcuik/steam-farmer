@@ -4,7 +4,7 @@ from telegram.ext import Application, CommandHandler, CallbackQueryHandler
 
 BOT_TOKEN = "8921104068:AAGEV1oPzJqViDGbofYQub4f-3sca92nMEw"
 STEAM_LOGIN = "mikimayc39"
-STEAM_PASS = "keklolorbidol12#"
+STEAM_PASS = "Keklolorbidol12"
 GAMES = [570, 730, 440]
 stats = {"hours": 0}
 session_cookies = ""
